@@ -15,6 +15,8 @@ import android.os.Build;
 import android.os.Bundle;
 import android.provider.ContactsContract;
 import android.util.Log;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.Toast;
 
@@ -44,6 +46,7 @@ public class MainActivity extends AppCompatActivity {
     private static final int LOCATION_PERMISSION_REQUEST = 300;
     private static final int SEND_SMS_PERMISSION_REQUEST = 400;
     private static final String TAG = MainActivity.class.getSimpleName();
+    private String number, name;
     private PhonesRecyclerAdapter adapter;
     private AppDatabase database;
     private List<ContactEntity> contactEntities = new ArrayList<>();
@@ -139,7 +142,7 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onChanged(List<ContactEntity> entity) {
                 contactEntities.clear();
-                contactEntities.addAll(entity);
+                contactEntities = entity;
                 adapter.setItems(contactEntities);
 
             }
@@ -221,7 +224,6 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void convertUriToPhoneNumber(Uri contactUri) {
-        String number;
         Cursor cursor = getContentResolver()
                 .query(contactUri, null, null, null, null);
         String hasPhone = null;
@@ -248,19 +250,8 @@ public class MainActivity extends AppCompatActivity {
                 while (phones.moveToNext()) {
                     number = phones.getString(phones.getColumnIndex(ContactsContract.CommonDataKinds.Phone.NUMBER))
                             .replaceAll("[-()]", "");
-                    final String displayName = phones.getString(phones.getColumnIndex(ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME));
-                    Toast.makeText(this, displayName + " is Added.", Toast.LENGTH_SHORT).show();
-                    final String finalNumber = number;
+                    name = phones.getString(phones.getColumnIndex(ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME));
 
-                    AppExactors.getInstance().getDiskIo().execute(new Runnable() {
-                        @Override
-                        public void run() {
-                            ContactEntity entity = new ContactEntity();
-                            entity.setPhoneNumber(finalNumber);
-                            entity.setContactName(displayName);
-                            database.dao().insert(entity);
-                        }
-                    });
 
                 }
 
@@ -275,6 +266,25 @@ public class MainActivity extends AppCompatActivity {
         if (cursor != null) {
             cursor.close();
         }
+
+        AppExactors.getInstance().getDiskIo().execute(new Runnable() {
+            @Override
+            public void run() {
+                ContactEntity entity = new ContactEntity();
+                entity.setPhoneNumber(number);
+                entity.setContactName(name);
+                database.dao().insert(entity);
+
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        Toast.makeText(MainActivity.this, name + " is Added.", Toast.LENGTH_SHORT).show();
+
+
+                    }
+                });
+            }
+        });
     }
 
     @Override
@@ -294,5 +304,30 @@ public class MainActivity extends AppCompatActivity {
                 }
         }
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.menu, menu);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(@NonNull MenuItem item) {
+        if (item.getItemId() == R.id.action_delete) {
+            clearAll();
+            return true;
+        }
+        return super.onOptionsItemSelected(item);
+    }
+
+    private void clearAll() {
+        AppExactors.getInstance().getDiskIo().execute(new Runnable() {
+            @Override
+            public void run() {
+                database.dao().deleteAll();
+                contactEntities.clear();
+            }
+        });
     }
 }

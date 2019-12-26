@@ -11,13 +11,18 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.project.semicolon.findme.R;
 import com.project.semicolon.findme.database.ContactEntity;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class PhonesRecyclerAdapter extends RecyclerView.Adapter<PhonesRecyclerAdapter.ViewHolder> {
     private List<ContactEntity> items;
 
-    public void setItems(List<ContactEntity> items) {
-        this.items = items;
+    public PhonesRecyclerAdapter() {
+        items = new ArrayList<>();
+    }
+
+    public void setItems(List<ContactEntity> contactEntities) {
+        this.items = contactEntities;
         notifyDataSetChanged();
     }
 

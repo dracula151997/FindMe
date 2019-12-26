@@ -4,7 +4,10 @@ import androidx.lifecycle.LiveData;
 import androidx.room.Dao;
 import androidx.room.Delete;
 import androidx.room.Insert;
+import androidx.room.OnConflictStrategy;
 import androidx.room.Query;
+
+import com.google.android.material.circularreveal.CircularRevealHelper;
 
 import java.util.List;
 
@@ -13,7 +16,7 @@ public interface DatabaseDao {
     @Query("SELECT * FROM ContactEntity")
     LiveData<List<ContactEntity>> getAll();
 
-    @Insert
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
     void insert(ContactEntity phone);
 
     @Delete
@@ -21,5 +24,8 @@ public interface DatabaseDao {
 
     @Query("SELECT phone_number FROM contactentity")
     List<String> getAllPhoneNumbers();
+
+    @Query("DELETE FROM contactentity")
+    void deleteAll();
 
 }
